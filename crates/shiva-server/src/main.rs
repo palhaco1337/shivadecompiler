@@ -129,12 +129,21 @@ async fn detonate(
     }
 }
 
-async fn run_disasm(Json(req): Json<DisasmRequest>) -> impl IntoResponse {
-    // Backends are registered here as they come online; empty for now so the
-    // endpoint reports "not registered" per requested engine.
-    let backends: Vec<Box<dyn disasm::DisasmBackend>> = Vec::new();
-    let report = disasm::analyze(&req, &backends).await;
-    Json(report)
+async fn run_disasm(
+    State(st): State<AppState>,
+    Json(req): Json<DisasmRequest>,
+) -> impl IntoResponse {
+    let Some(path) = st.downloads.path_for_sha256(&req.artifact_sha256).await else {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({
+                "error": "amostra nao encontrada (sha256 sem tarefa concluida)"
+            })),
+        )
+            .into_response();
+    };
+    let backends = disasm::default_backends();
+    Json(disasm::analyze(&req, &path, &backends).await).into_response()
 }
 
 #[derive(Deserialize)]

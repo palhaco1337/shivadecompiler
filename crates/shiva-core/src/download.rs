@@ -138,6 +138,42 @@ impl DownloadManager {
         self.tasks.read().await.clone()
     }
 
+    /// Resolve a sha256 to its on-disk path. Looks in the task list first, then
+    /// falls back to scanning (and hashing) files in the vault, so artifacts put
+    /// there out of band can still be analyzed.
+    pub async fn path_for_sha256(&self, sha: &str) -> Option<PathBuf> {
+        {
+            let tasks = self.tasks.read().await;
+            if let Some(p) = tasks
+                .iter()
+                .find(|t| t.sha256.as_deref() == Some(sha))
+                .and_then(|t| t.out_path.clone())
+            {
+                return Some(p);
+            }
+        }
+        let dir = self.download_dir.clone();
+        let want = sha.to_lowercase();
+        tokio::task::spawn_blocking(move || {
+            for e in std::fs::read_dir(&dir).ok()?.flatten() {
+                let p = e.path();
+                if p.is_file() {
+                    if let Ok(bytes) = std::fs::read(&p) {
+                        let mut h = Sha256::new();
+                        h.update(&bytes);
+                        if hex::encode(h.finalize()) == want {
+                            return Some(p);
+                        }
+                    }
+                }
+            }
+            None
+        })
+        .await
+        .ok()
+        .flatten()
+    }
+
     pub async fn stats(&self) -> Stats {
         let tasks = self.tasks.read().await;
         let mut s = Stats::default();
