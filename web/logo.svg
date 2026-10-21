@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="ShivaDecompiler">
-  <g fill="none" stroke="#2a2a2e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <g fill="none" stroke="#3987e5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
     <!-- trishula (tridente) staff -->
     <path d="M32 26 V60"/>
     <!-- no (damaru) -->
@@ -17,5 +17,5 @@
     <path d="M43 11 L46 8 L49 12"/>
   </g>
   <!-- lua crescente -->
-  <path d="M54 50 a7.5 7.5 0 1 1 -3.2 -12 a6 6 0 1 0 3.2 12 Z" fill="#2a2a2e"/>
+  <path d="M54 50 a7.5 7.5 0 1 1 -3.2 -12 a6 6 0 1 0 3.2 12 Z" fill="#3987e5"/>
 </svg>

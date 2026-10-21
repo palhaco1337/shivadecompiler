@@ -13,21 +13,21 @@
       <img src="logo.svg" class="brand-logo" alt="" />
       <span class="brand-name">Shiva<span>Decompiler</span></span>
     </div>
-    <div class="gspeed" id="gspeed" title="Velocidade total de download">0 B/s</div>
     <div class="search">
       <input id="search" type="text" placeholder="Filtrar tarefas..." />
     </div>
-    <select id="lang" class="lang">
-      <option value="pt">PT</option>
-      <option value="en">EN</option>
-    </select>
-    <div class="status" id="health">conectando...</div>
+    <div class="top-right">
+      <div class="gspeed" id="gspeed" title="Velocidade total de download">
+        <span class="gspeed-dot"></span><span>&#8595;</span> <span id="gspeed-val">0 B/s</span>
+      </div>
+      <select id="lang" class="lang"><option value="pt">PT</option><option value="en">EN</option></select>
+      <div class="status" id="health"><span class="dot"></span>conectando...</div>
+    </div>
   </header>
 
   <div class="shell">
     <nav class="sidebar">
       <div class="nav-group" data-i18n="nav_tasks">Tarefas</div>
-      <button class="nav" data-view="new"><span data-i18n="nav_new">Novo download</span></button>
       <button class="nav is-active" data-view="baixando"><span data-i18n="nav_downloading">Baixando</span> <span class="count" id="c-baixando">0</span></button>
       <button class="nav" data-view="aguardando"><span data-i18n="nav_waiting">Aguardando</span> <span class="count" id="c-aguardando">0</span></button>
       <button class="nav" data-view="parados"><span data-i18n="nav_stopped">Parados</span> <span class="count" id="c-parados">0</span></button>
@@ -42,23 +42,7 @@
     </nav>
 
     <main class="content">
-      <!-- VIEW: Novo download -->
-      <section class="view hidden" id="view-new">
-        <h1 data-i18n="h_new">Novo download</h1>
-        <p class="hint" data-i18n="new_hint">Uma URL por linha. Enderecos .onion vao pelo Tor automaticamente.</p>
-        <textarea id="new-urls" rows="5" placeholder="http://exemplo.onion/amostra.bin&#10;https://host/arquivo.zip"></textarea>
-        <div class="field-row">
-          <label><span data-i18n="new_conn">Conexoes por arquivo</span>
-            <input id="new-conn" type="number" min="1" max="16" value="4" />
-          </label>
-          <label><span data-i18n="new_out">Nome de saida (opcional)</span>
-            <input id="new-out" type="text" placeholder="deixe vazio p/ auto" />
-          </label>
-        </div>
-        <button class="btn btn-primary" id="new-go" data-i18n="btn_download">Baixar</button>
-      </section>
-
-      <!-- VIEW: tarefas -->
+      <!-- VIEW: tarefas (padrao) -->
       <section class="view" id="view-tasks">
         <div class="toolbar">
           <button class="btn btn-primary" id="t-new" data-i18n="btn_new">Novo</button>
@@ -76,30 +60,46 @@
         <p class="empty" id="tasks-empty" data-i18n="empty">Nenhuma tarefa aqui.</p>
       </section>
 
+      <!-- VIEW: Novo download -->
+      <section class="view hidden" id="view-new">
+        <h1 data-i18n="h_new">Novo download</h1>
+        <p class="hint" data-i18n="new_hint">Uma URL por linha. Enderecos .onion vao pelo Tor automaticamente.</p>
+        <div class="card form-card">
+          <textarea id="new-urls" rows="5" placeholder="http://exemplo.onion/amostra.bin&#10;https://host/arquivo.zip"></textarea>
+          <div class="field-row">
+            <label><span data-i18n="new_conn">Conexoes por arquivo</span><input id="new-conn" type="number" min="1" max="16" value="4" /></label>
+            <label><span data-i18n="new_out">Nome de saida (opcional)</span><input id="new-out" type="text" placeholder="auto" /></label>
+          </div>
+          <div class="field-actions">
+            <button class="btn btn-primary" id="new-go" data-i18n="btn_download">Baixar</button>
+            <button class="btn" id="new-cancel" data-i18n="btn_close">Fechar</button>
+          </div>
+        </div>
+      </section>
+
       <!-- VIEW: Terminal -->
       <section class="view hidden" id="view-term">
         <h1 data-i18n="h_term">Terminal do cofre</h1>
         <p class="hint">Navegacao enjaulada na pasta de amostras. Comandos: <code>ls</code>, <code>cd &lt;dir&gt;</code>, <code>pwd</code>, <code>cat &lt;arquivo&gt;</code>, <code>clear</code>, <code>help</code>.</p>
         <div class="term" id="term-out"></div>
-        <div class="term-input">
-          <span class="term-prompt" id="term-prompt">shiva:/$</span>
-          <input id="term-cmd" type="text" autocomplete="off" spellcheck="false" />
-        </div>
+        <div class="term-input"><span class="term-prompt" id="term-prompt">shiva:/$</span><input id="term-cmd" type="text" autocomplete="off" spellcheck="false" /></div>
       </section>
 
       <!-- VIEW: Disassembly Packages -->
       <section class="view hidden" id="view-disasm">
         <h1>Disassembly Packages</h1>
         <p class="hint">Submete um binario a varios backends de disassembly/decompilacao lado a lado.</p>
-        <form id="da-form" class="row">
-          <input id="da-sha" type="text" placeholder="sha256 da amostra (copie de uma tarefa concluida)" />
-          <button type="submit" class="btn btn-accent" data-i18n="btn_analyze">Analisar</button>
-        </form>
-        <fieldset class="engines">
-          <label><input type="checkbox" value="objdump-asm" checked /> objdump (asm)</label>
-          <label><input type="checkbox" value="pseudo-c" checked /> pseudo-C</label>
-          <label><input type="checkbox" value="llm-reversing" /> LLM reversing</label>
-        </fieldset>
+        <div class="card form-card">
+          <form id="da-form" class="row">
+            <input id="da-sha" type="text" placeholder="sha256 da amostra (copie de uma tarefa concluida)" />
+            <button type="submit" class="btn btn-primary" data-i18n="btn_analyze">Analisar</button>
+          </form>
+          <fieldset class="engines">
+            <label><input type="checkbox" value="objdump-asm" checked /> objdump (asm)</label>
+            <label><input type="checkbox" value="pseudo-c" /> pseudo-C</label>
+            <label><input type="checkbox" value="llm-reversing" /> LLM reversing</label>
+          </fieldset>
+        </div>
         <div class="da-results" id="da-results"></div>
       </section>
 
@@ -112,26 +112,44 @@
       <!-- VIEW: Configuracoes -->
       <section class="view hidden" id="view-settings">
         <h1 data-i18n="h_settings">Configuracoes</h1>
-        <div class="field-row">
-          <label><span data-i18n="set_refresh">Intervalo de atualizacao (ms)</span>
-            <input id="set-refresh" type="number" min="500" max="10000" step="500" value="1500" />
-          </label>
-          <label><span data-i18n="set_conn">Conexoes padrao</span>
-            <input id="set-conn" type="number" min="1" max="16" value="4" />
-          </label>
+
+        <div class="card form-card">
+          <h2 class="set-cat" data-i18n="set_interface">Interface</h2>
+          <div class="set-row"><label data-i18n="set_lang">Idioma</label>
+            <select id="set-lang"><option value="pt">Portugues</option><option value="en">English</option></select></div>
+          <div class="set-row"><label data-i18n="set_refresh">Intervalo de atualizacao (ms)</label>
+            <input id="set-refresh" type="number" min="500" max="10000" step="500" value="1500" /></div>
+          <div class="set-row"><label data-i18n="set_title">Mostrar velocidade no titulo da aba</label>
+            <input id="set-title" type="checkbox" /></div>
+          <div class="set-row"><label data-i18n="set_confirm">Confirmar antes de remover tarefa</label>
+            <input id="set-confirm" type="checkbox" /></div>
+          <div class="set-row"><label data-i18n="set_goto">Ir para Baixando ao adicionar</label>
+            <input id="set-goto" type="checkbox" /></div>
         </div>
-        <button class="btn btn-primary" id="set-save" data-i18n="btn_save">Salvar</button>
-        <div class="cards" id="settings-cards" style="margin-top:18px"></div>
+
+        <div class="card form-card" style="margin-top:14px">
+          <h2 class="set-cat" data-i18n="set_downloads">Downloads</h2>
+          <div class="set-row"><label data-i18n="set_conn">Conexoes padrao por arquivo</label>
+            <input id="set-conn" type="number" min="1" max="16" value="4" /></div>
+          <div class="set-row"><label data-i18n="set_confirm_clear">Confirmar ao limpar concluidos</label>
+            <input id="set-confirm-clear" type="checkbox" /></div>
+        </div>
+
+        <div class="field-actions" style="margin-top:14px">
+          <button class="btn btn-primary" id="set-save" data-i18n="btn_save">Salvar</button>
+          <button class="btn" id="set-reset" data-i18n="btn_reset">Restaurar padroes</button>
+        </div>
+
+        <div class="card form-card" style="margin-top:16px">
+          <h2 class="set-cat" data-i18n="set_engine">Engine (somente leitura)</h2>
+          <div class="cards" id="settings-cards"></div>
+        </div>
       </section>
     </main>
   </div>
 
-  <!-- Drawer generico (detalhe da tarefa / sandbox) -->
   <aside class="drawer hidden" id="drawer">
-    <div class="drawer-head">
-      <strong id="drawer-title">Detalhe</strong>
-      <button class="btn" id="drawer-close" data-i18n="btn_close">Fechar</button>
-    </div>
+    <div class="drawer-head"><strong id="drawer-title">Detalhe</strong><button class="btn" id="drawer-close" data-i18n="btn_close">Fechar</button></div>
     <div class="drawer-body" id="drawer-body"></div>
   </aside>
 
