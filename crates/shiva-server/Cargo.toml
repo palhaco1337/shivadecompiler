@@ -1,0 +1,22 @@
+[package]
+name = "shiva-server"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "shiva-server"
+path = "src/main.rs"
+
+[dependencies]
+shiva-core = { path = "../shiva-core" }
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+anyhow.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+axum = "0.8.1"
+tower-http = { version = "0.6.2", features = ["fs", "trace", "cors"] }
+uuid = { version = "1.12.1", features = ["v4", "serde"] }

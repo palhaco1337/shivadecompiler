@@ -1,0 +1,5 @@
+/target
+/downloads
+**/*.rs.bk
+.env
+Cargo.lock

@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ShivaDecompiler</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">◬</span>
+      <span class="brand-name">Shiva<span>Decompiler</span></span>
+    </div>
+    <nav class="tabs">
+      <button class="tab is-active" data-view="downloads">Coleta</button>
+      <button class="tab" data-view="sandbox">Sandbox</button>
+    </nav>
+    <div class="status" id="health">● conectando…</div>
+  </header>
+
+  <main class="layout">
+    <section class="panel" id="view-downloads">
+      <h1>Coleta de amostras</h1>
+      <p class="hint">Baixa recursos como bytes opacos. URLs <code>.onion</code> são
+        roteadas pelo Tor automaticamente. Nada é executado localmente.</p>
+      <form id="dl-form" class="row">
+        <input id="dl-url" type="text" placeholder="http://exemplo.onion/amostra.bin" />
+        <button type="submit" class="btn btn-primary">Enfileirar</button>
+      </form>
+      <table class="grid" id="dl-table">
+        <thead>
+          <tr><th>URL</th><th>Tor</th><th>Estado</th><th>Progresso</th><th>SHA-256</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <section class="panel hidden" id="view-sandbox">
+      <h1>Sandbox remota</h1>
+      <p class="hint">Binários são detonados em Docker isolado numa VPS dedicada —
+        <strong>nunca</strong> na sua máquina.</p>
+      <form id="det-form" class="row">
+        <input id="det-sha" type="text" placeholder="sha256 da amostra" />
+        <button type="submit" class="btn btn-primary">Detonar</button>
+      </form>
+      <pre class="console" id="det-out">—</pre>
+    </section>
+
+    <!-- Módulo lateral: Disassembly Packages (estilo multi-decompiler) -->
+    <aside class="sidebar" id="disasm">
+      <h2>Disassembly Packages</h2>
+      <form id="da-form">
+        <input id="da-sha" type="text" placeholder="sha256 da amostra" />
+        <fieldset class="engines">
+          <label><input type="checkbox" value="objdump-asm" checked /> objdump (asm)</label>
+          <label><input type="checkbox" value="pseudo-c" checked /> pseudo-C</label>
+          <label><input type="checkbox" value="llm-reversing" /> LLM reversing</label>
+        </fieldset>
+        <button type="submit" class="btn btn-accent">Analisar</button>
+      </form>
+      <div class="da-results" id="da-results"></div>
+    </aside>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

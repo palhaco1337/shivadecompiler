@@ -1,0 +1,20 @@
+[package]
+name = "shiva-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+anyhow.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+
+# HTTP client with SOCKS5 support so we can route .onion fetches through Tor.
+reqwest = { version = "0.12.12", default-features = false, features = ["rustls-tls", "socks", "stream"] }
+futures-util = "0.3.31"
+sha2 = "0.10.8"
+hex = "0.4.3"
+uuid = { version = "1.12.1", features = ["v4", "serde"] }
