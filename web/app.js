@@ -1,4 +1,4 @@
-// ShivaDecompiler frontend — AriaNg-style download manager over the Axum API.
+// ShivaDecompiler frontend - AriaNg-style download manager over the Axum API.
 const API = "";
 let currentView = "baixando";
 let tasks = [];

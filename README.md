@@ -5,7 +5,7 @@
                    \   |   /
                     \  |  /                    .--.
                ======\(•)/======              (    )
-                      \|/                       )  )   ~ lua crescente
+                      \|/                       )  )   ~ crescent moon
                        |                        (  (
                        |                         `--'
                        |
@@ -13,123 +13,124 @@
                   ~~~~~~~~~~~~
                    trishula
 
-        coleta . emula . reverte   —   analise segura de amostras
+        collect . emulate . reverse   -   safe sample analysis
 ```
 
 # ShivaDecompiler
 
-Ferramenta web, escrita em **Rust**, para **coleta e análise segura de amostras**
-voltada a pesquisa de segurança / reversing. Implementação **original** (não é um
-port nem cópia de nenhum gerenciador de downloads existente), com interface
-inspirada no fluxo de um gerenciador de downloads clássico.
+A web tool, written in **Rust**, for **safe collection and analysis of samples**,
+aimed at security research / reverse engineering. It is an **original**
+implementation (not a port or copy of any existing download manager), with an
+interface inspired by the workflow of a classic download manager.
 
-A ideia: baixar arquivos com **velocidade** (inclusive da rede `.onion`), guardar
-tudo num cofre isolado, e a partir daí **emular/detonar** binários num Docker
-remoto e **reverter** com um módulo de disassembly — sem nada rodar na máquina do
-operador.
+The idea: download files **fast** (including from the `.onion` network), store
+everything in an isolated vault, then **emulate/detonate** binaries in a remote
+Docker host and **reverse** them with a disassembly module - with nothing running
+on the operator's machine.
 
-## Funcionalidades
+## Features
 
-### Coleta (Downloads)
-- Fila de downloads com **Novo download**: várias URLs de uma vez.
-- **Download segmentado** (múltiplas conexões por arquivo, via HTTP Range) para
-  maximizar velocidade — o recurso de performance no estilo do aria2/AriaNg.
-- **Velocidade em tempo real** por tarefa e **velocidade global** no topo.
-- **Tor automático**: URLs `.onion` são roteadas pelo proxy SOCKS5
-  (`socks5h://127.0.0.1:9050`); clearnet vai direto.
-- Estados **Baixando / Aguardando / Parados** com contadores.
-- **Detalhe da tarefa** (painel lateral): URL, estado, conexões, progresso,
-  bytes, velocidade, `sha256`, caminho em disco, erro.
-- **Remover** (com **cancelamento real** da transferência em andamento),
-  **Repetir com erro**, **Limpar concluídos**.
-- Cada arquivo é gravado como **bytes opacos** e tem o **SHA-256** calculado.
-  Nada é executado localmente.
+### Collection (Downloads)
+- Download queue with **New download**: several URLs at once.
+- **Segmented downloads** (multiple connections per file, via HTTP Range) to
+  maximize speed - the aria2/AriaNg-style performance feature.
+- **Real-time speed** per task and **global speed** in the header.
+- **Automatic Tor**: `.onion` URLs are routed through the SOCKS5 proxy
+  (`socks5h://127.0.0.1:9050`); clearnet goes direct.
+- **Downloading / Waiting / Stopped** states with counters.
+- **Task detail** (side panel): URL, state, connections, progress, bytes, speed,
+  `sha256`, on-disk path, error.
+- **Remove** (with **real cancellation** of an in-flight transfer),
+  **Retry errored**, **Clear completed**.
+- Each file is written as **opaque bytes** and its **SHA-256** is computed.
+  Nothing is executed locally.
 
-### Terminal do cofre
-- Navegação estilo terminal **enjaulada** na pasta de amostras:
-  `ls`, `cd <dir>`, `pwd`, `cat <arquivo>`, `clear`, `help`.
-- **Sem execução de comando do SO** — é um navegador de arquivos seguro, com
-  proteção contra traversal (`../` não escapa da raiz).
+### Vault terminal
+- Terminal-style, **jailed** navigation of the sample folder:
+  `ls`, `cd <dir>`, `pwd`, `cat <file>`, `clear`, `help`.
+- **No OS command execution** - it is a safe file browser with traversal
+  protection (`../` cannot escape the root).
 
-### Sandbox (detonação remota)
-- Binários são detonados num **Docker remoto** (VPS/lab dedicado), **nunca** na
-  máquina do operador.
-- Container endurecido: `--network none` por padrão, rootfs read-only,
-  `cap_drop ALL`, usuário não-root, limites de memória/pids/tempo.
-- Executor plugável (`StubExecutor` até ligar o Docker-over-TLS / runner SSH).
+### Sandbox (remote detonation)
+- Binaries are detonated in a **remote Docker host** (dedicated VPS/lab),
+  **never** on the operator's machine.
+- Hardened container: `--network none` by default, read-only rootfs,
+  `cap_drop ALL`, non-root user, memory/pids/time limits.
+- Pluggable executor (`StubExecutor` until the Docker-over-TLS / SSH runner is
+  wired in).
 
 ### Disassembly Packages
-- Submete um binário a vários backends de disassembly/decompilação lado a lado
-  (asm, pseudo-C, reversing assistido por LLM) — ideia parecida com o dogbolt.
-- Backends plugáveis via trait `DisasmBackend`.
+- Submits a binary to several disassembly/decompilation backends side by side
+  (asm, pseudo-C, LLM-assisted reversing) - similar idea to dogbolt.
+- Pluggable backends via the `DisasmBackend` trait.
 
-### Sistema
-- **Status do engine**: ativos/aguardando/concluídos/falhas, velocidade total,
-  total baixado, Tor, sandbox.
-- **Configurações**: intervalo de atualização e conexões padrão (persistem no
-  navegador).
-- **Idioma PT/EN**, tema branco/cinza, fonte Helvetica, botões quadrados.
+### System
+- **Engine status**: active/waiting/completed/failed, total speed, total
+  downloaded, Tor, sandbox.
+- **Settings**: refresh interval and default connections (persisted in the
+  browser).
+- **PT/EN language**, white/gray theme, Helvetica font, square buttons.
 
-## Arquitetura
+## Architecture
 
 ```
 crates/
-  shiva-core/    engine headless
-    download.rs  fila + download segmentado + Tor + cancelamento + stats
-    vault.rs     navegador de arquivos enjaulado (terminal)
-    sandbox.rs   contrato de detonação em Docker remoto
-    disasm.rs    módulo Disassembly Packages
-  shiva-server/  servidor Axum: serve o frontend + API JSON
-web/             frontend SPA (HTML/CSS/JS, sem build step)
+  shiva-core/    headless engine
+    download.rs  queue + segmented download + Tor + cancellation + stats
+    vault.rs     jailed file browser (terminal)
+    sandbox.rs   remote Docker detonation contract
+    disasm.rs    Disassembly Packages module
+  shiva-server/  Axum server: serves the frontend + JSON API
+web/             SPA frontend (HTML/CSS/JS, no build step)
 ```
 
-## Rodando
+## Running
 
 ```bash
 cargo run -p shiva-server
-# abre http://127.0.0.1:8777
+# opens http://127.0.0.1:8777
 ```
 
-> No Windows, o toolchain `x86_64-pc-windows-gnu` precisa do MinGW-w64 no PATH
-> (para `dlltool`/`gcc`/`ld`). Ex.: WinLibs.
+> On Windows, the `x86_64-pc-windows-gnu` toolchain needs MinGW-w64 on PATH
+> (for `dlltool`/`gcc`/`ld`). E.g. WinLibs.
 
-### Variáveis de ambiente
+### Environment variables
 
-| Var | Padrão | Descrição |
-|-----|--------|-----------|
-| `SHIVA_BIND` | `127.0.0.1:8777` | Endereço de bind |
-| `SHIVA_DOWNLOAD_DIR` | `./downloads` | Cofre de amostras |
-| `SHIVA_TOR_PROXY` | `socks5h://127.0.0.1:9050` | Proxy Tor (para `.onion`) |
-| `SHIVA_DOCKER_HOST` | — | Docker da VPS de análise (TLS recomendado) |
-| `SHIVA_WEB_DIR` | `./web` | Diretório do frontend |
+| Var | Default | Description |
+|-----|---------|-------------|
+| `SHIVA_BIND` | `127.0.0.1:8777` | Bind address |
+| `SHIVA_DOWNLOAD_DIR` | `./downloads` | Sample vault |
+| `SHIVA_TOR_PROXY` | `socks5h://127.0.0.1:9050` | Tor proxy (for `.onion`) |
+| `SHIVA_DOCKER_HOST` | - | Analysis VPS Docker (TLS recommended) |
+| `SHIVA_WEB_DIR` | `./web` | Frontend directory |
 
 ## API
 
-| Método | Rota | Descrição |
-|--------|------|-----------|
+| Method | Route | Description |
+|--------|-------|-------------|
 | `GET`  | `/api/health` | Status |
-| `GET`  | `/api/stats` | Agregados (contagens, velocidade total) |
-| `GET`  | `/api/downloads` | Lista tarefas |
-| `POST` | `/api/downloads` | `{ "url", "connections?", "out_name?" }` enfileira |
-| `DELETE` | `/api/downloads/{id}` | Remove/cancela |
-| `GET`  | `/api/fs?path=` | Lista diretório do cofre |
-| `GET`  | `/api/fs/cat?path=` | Lê (head) um arquivo do cofre |
-| `POST` | `/api/sandbox/detonate` | Detonação remota |
-| `POST` | `/api/disasm` | Executa backends de análise |
+| `GET`  | `/api/stats` | Aggregates (counts, total speed) |
+| `GET`  | `/api/downloads` | List tasks |
+| `POST` | `/api/downloads` | `{ "url", "connections?", "out_name?" }` enqueue |
+| `DELETE` | `/api/downloads/{id}` | Remove/cancel |
+| `GET`  | `/api/fs?path=` | List a vault directory |
+| `GET`  | `/api/fs/cat?path=` | Read (head) a vault file |
+| `POST` | `/api/sandbox/detonate` | Remote detonation |
+| `POST` | `/api/disasm` | Run analysis backends |
 
-## Segurança
+## Security
 
-- Binários coletados **nunca** rodam no host do operador.
-- `.onion` sempre via Tor (DNS resolvido no proxy, `socks5h`).
-- Terminal do cofre é enjaulado, sem execução de comandos.
-- Container de detonação isolado e sem rede por padrão.
+- Collected binaries **never** run on the operator's host.
+- `.onion` always via Tor (DNS resolved on the proxy, `socks5h`).
+- The vault terminal is jailed, with no command execution.
+- The detonation container is isolated and network-less by default.
 
-## Estado atual
+## Current status
 
-Base funcional. O executor de sandbox e os backends de disassembly são *stubs*
-registráveis; **pausa/retomada** de download ainda não é resumível. Próximos
-passos: ligar o Docker-over-TLS na VPS, plugar as engines de reversing, e o LLM.
+Functional base. The sandbox executor and the disassembly backends are
+registrable *stubs*; download **pause/resume** is not resumable yet. Next steps:
+wire Docker-over-TLS on the VPS, plug in the reversing engines, and the LLM.
 
-## Licença
+## License
 
 AGPL-3.0-or-later.

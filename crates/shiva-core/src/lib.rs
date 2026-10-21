@@ -1,11 +1,11 @@
-//! shiva-core — engine for ShivaDecompiler.
+//! shiva-core - engine for ShivaDecompiler.
 //!
 //! This crate holds the headless building blocks that the web server drives:
-//!   * [`download`]  — a download queue that can route fetches through a Tor
+//!   * [`download`]  - a download queue that can route fetches through a Tor
 //!     SOCKS5 proxy so `.onion` resources can be pulled for later analysis.
-//!   * [`sandbox`]   — orchestration of a *remote* Docker host where untrusted
+//!   * [`sandbox`]   - orchestration of a *remote* Docker host where untrusted
 //!     binaries are detonated in isolation (never on the operator's machine).
-//!   * [`disasm`]    — types for the "Disassembly Packages" module: submitting a
+//!   * [`disasm`]    - types for the "Disassembly Packages" module: submitting a
 //!     binary to one or more decompiler backends and collecting their output.
 //!
 //! It is deliberately an original implementation; it is not a port of any

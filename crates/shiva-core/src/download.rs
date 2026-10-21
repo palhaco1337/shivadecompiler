@@ -2,7 +2,7 @@
 //! transfers for speed.
 //!
 //! Safety model: files are fetched as *opaque bytes*. Nothing fetched here is
-//! ever executed locally — binaries go to the [`crate::sandbox`] for detonation
+//! ever executed locally - binaries go to the [`crate::sandbox`] for detonation
 //! on a remote, isolated Docker host. The download step only streams to disk
 //! and hashes the result.
 
