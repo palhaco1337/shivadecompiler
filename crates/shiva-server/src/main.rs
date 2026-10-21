@@ -7,15 +7,16 @@ use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use axum::extract::{Path, State};
+use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
-use axum::routing::{get, post};
+use axum::routing::{delete, get, post};
 use axum::{Json, Router};
 use serde::Deserialize;
 use shiva_core::disasm::{self, DisasmRequest};
-use shiva_core::download::DownloadManager;
+use shiva_core::download::{DownloadManager, EnqueueRequest};
 use shiva_core::sandbox::{self, DetonationRequest, ContainerSpec, SandboxExecutor, StubExecutor};
+use shiva_core::vault::Vault;
 use tower_http::cors::CorsLayer;
 use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
@@ -25,6 +26,7 @@ use uuid::Uuid;
 struct AppState {
     downloads: DownloadManager,
     executor: Arc<StubExecutor>,
+    vault: Vault,
 }
 
 #[tokio::main]
@@ -36,15 +38,17 @@ async fn main() -> anyhow::Result<()> {
         )
         .init();
 
-    let download_dir =
-        std::env::var("SHIVA_DOWNLOAD_DIR").unwrap_or_else(|_| "./downloads".to_string());
+    let download_dir = PathBuf::from(
+        std::env::var("SHIVA_DOWNLOAD_DIR").unwrap_or_else(|_| "./downloads".to_string()),
+    );
     let tor_proxy = std::env::var("SHIVA_TOR_PROXY")
         .ok()
         .or_else(|| Some("socks5h://127.0.0.1:9050".to_string()));
 
     let state = AppState {
-        downloads: DownloadManager::new(PathBuf::from(download_dir), tor_proxy),
+        downloads: DownloadManager::new(download_dir.clone(), tor_proxy),
         executor: Arc::new(StubExecutor),
+        vault: Vault::new(download_dir),
     };
 
     let web_dir = std::env::var("SHIVA_WEB_DIR").unwrap_or_else(|_| "./web".to_string());
@@ -52,8 +56,12 @@ async fn main() -> anyhow::Result<()> {
     let app = Router::new()
         .route("/api/health", get(health))
         .route("/api/downloads", get(list_downloads).post(add_download))
+        .route("/api/downloads/{id}", delete(remove_download))
+        .route("/api/stats", get(stats))
         .route("/api/sandbox/detonate", post(detonate))
         .route("/api/disasm", post(run_disasm))
+        .route("/api/fs", get(fs_list))
+        .route("/api/fs/cat", get(fs_cat))
         .fallback_service(ServeDir::new(web_dir).append_index_html_on_directories(true))
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())
@@ -77,22 +85,32 @@ async fn list_downloads(State(st): State<AppState>) -> impl IntoResponse {
     Json(st.downloads.list().await)
 }
 
-#[derive(Deserialize)]
-struct AddDownload {
-    url: String,
+async fn stats(State(st): State<AppState>) -> impl IntoResponse {
+    Json(st.downloads.stats().await)
 }
 
 async fn add_download(
     State(st): State<AppState>,
-    Json(body): Json<AddDownload>,
+    Json(body): Json<EnqueueRequest>,
 ) -> impl IntoResponse {
-    match st.downloads.enqueue(body.url).await {
+    match st.downloads.enqueue(body).await {
         Ok(id) => (StatusCode::ACCEPTED, Json(serde_json::json!({ "id": id }))).into_response(),
         Err(e) => (
             StatusCode::BAD_REQUEST,
             Json(serde_json::json!({ "error": e.to_string() })),
         )
             .into_response(),
+    }
+}
+
+async fn remove_download(
+    State(st): State<AppState>,
+    Path(id): Path<Uuid>,
+) -> impl IntoResponse {
+    if st.downloads.remove(id).await {
+        StatusCode::NO_CONTENT
+    } else {
+        StatusCode::NOT_FOUND
     }
 }
 
@@ -119,7 +137,35 @@ async fn run_disasm(Json(req): Json<DisasmRequest>) -> impl IntoResponse {
     Json(report)
 }
 
-// Kept so the sandbox Job/Uuid types stay part of the public surface the
-// frontend will grow into; silences dead-code during early scaffolding.
+#[derive(Deserialize)]
+struct FsQuery {
+    #[serde(default)]
+    path: String,
+}
+
+async fn fs_list(State(st): State<AppState>, Query(q): Query<FsQuery>) -> impl IntoResponse {
+    match st.vault.list(&q.path) {
+        Ok(listing) => (StatusCode::OK, Json(listing)).into_response(),
+        Err(e) => (
+            StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({ "error": e.to_string() })),
+        )
+            .into_response(),
+    }
+}
+
+async fn fs_cat(State(st): State<AppState>, Query(q): Query<FsQuery>) -> impl IntoResponse {
+    match st.vault.head(&q.path, 64 * 1024) {
+        Ok(text) => (StatusCode::OK, Json(serde_json::json!({ "text": text }))).into_response(),
+        Err(e) => (
+            StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({ "error": e.to_string() })),
+        )
+            .into_response(),
+    }
+}
+
+// Kept so the sandbox Job type stays part of the public surface the frontend
+// will grow into; silences dead-code during early scaffolding.
 #[allow(dead_code)]
-fn _type_anchors(_j: sandbox::Job, _p: Path<Uuid>) {}
+fn _type_anchors(_j: sandbox::Job) {}

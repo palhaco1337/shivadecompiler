@@ -4,64 +4,136 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>ShivaDecompiler</title>
+  <link rel="icon" type="image/svg+xml" href="logo.svg" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="topbar">
     <div class="brand">
-      <span class="brand-mark" aria-hidden="true">◬</span>
+      <img src="logo.svg" class="brand-logo" alt="" />
       <span class="brand-name">Shiva<span>Decompiler</span></span>
     </div>
-    <nav class="tabs">
-      <button class="tab is-active" data-view="downloads">Coleta</button>
-      <button class="tab" data-view="sandbox">Sandbox</button>
-    </nav>
-    <div class="status" id="health">● conectando…</div>
+    <div class="gspeed" id="gspeed" title="Velocidade total de download">0 B/s</div>
+    <div class="search">
+      <input id="search" type="text" placeholder="Filtrar tarefas..." />
+    </div>
+    <select id="lang" class="lang">
+      <option value="pt">PT</option>
+      <option value="en">EN</option>
+    </select>
+    <div class="status" id="health">conectando...</div>
   </header>
 
-  <main class="layout">
-    <section class="panel" id="view-downloads">
-      <h1>Coleta de amostras</h1>
-      <p class="hint">Baixa recursos como bytes opacos. URLs <code>.onion</code> são
-        roteadas pelo Tor automaticamente. Nada é executado localmente.</p>
-      <form id="dl-form" class="row">
-        <input id="dl-url" type="text" placeholder="http://exemplo.onion/amostra.bin" />
-        <button type="submit" class="btn btn-primary">Enfileirar</button>
-      </form>
-      <table class="grid" id="dl-table">
-        <thead>
-          <tr><th>URL</th><th>Tor</th><th>Estado</th><th>Progresso</th><th>SHA-256</th></tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </section>
+  <div class="shell">
+    <nav class="sidebar">
+      <div class="nav-group" data-i18n="nav_tasks">Tarefas</div>
+      <button class="nav" data-view="new"><span data-i18n="nav_new">Novo download</span></button>
+      <button class="nav is-active" data-view="baixando"><span data-i18n="nav_downloading">Baixando</span> <span class="count" id="c-baixando">0</span></button>
+      <button class="nav" data-view="aguardando"><span data-i18n="nav_waiting">Aguardando</span> <span class="count" id="c-aguardando">0</span></button>
+      <button class="nav" data-view="parados"><span data-i18n="nav_stopped">Parados</span> <span class="count" id="c-parados">0</span></button>
 
-    <section class="panel hidden" id="view-sandbox">
-      <h1>Sandbox remota</h1>
-      <p class="hint">Binários são detonados em Docker isolado numa VPS dedicada —
-        <strong>nunca</strong> na sua máquina.</p>
-      <form id="det-form" class="row">
-        <input id="det-sha" type="text" placeholder="sha256 da amostra" />
-        <button type="submit" class="btn btn-primary">Detonar</button>
-      </form>
-      <pre class="console" id="det-out">—</pre>
-    </section>
+      <div class="nav-group" data-i18n="nav_tools">Ferramentas</div>
+      <button class="nav" data-view="term"><span data-i18n="nav_terminal">Terminal</span></button>
+      <button class="nav" data-view="disasm">Disassembly Packages</button>
 
-    <!-- Módulo lateral: Disassembly Packages (estilo multi-decompiler) -->
-    <aside class="sidebar" id="disasm">
-      <h2>Disassembly Packages</h2>
-      <form id="da-form">
-        <input id="da-sha" type="text" placeholder="sha256 da amostra" />
+      <div class="nav-group" data-i18n="nav_system">Sistema</div>
+      <button class="nav" data-view="status"><span data-i18n="nav_status">Status do engine</span></button>
+      <button class="nav" data-view="settings"><span data-i18n="nav_settings">Configuracoes</span></button>
+    </nav>
+
+    <main class="content">
+      <!-- VIEW: Novo download -->
+      <section class="view hidden" id="view-new">
+        <h1 data-i18n="h_new">Novo download</h1>
+        <p class="hint" data-i18n="new_hint">Uma URL por linha. Enderecos .onion vao pelo Tor automaticamente.</p>
+        <textarea id="new-urls" rows="5" placeholder="http://exemplo.onion/amostra.bin&#10;https://host/arquivo.zip"></textarea>
+        <div class="field-row">
+          <label><span data-i18n="new_conn">Conexoes por arquivo</span>
+            <input id="new-conn" type="number" min="1" max="16" value="4" />
+          </label>
+          <label><span data-i18n="new_out">Nome de saida (opcional)</span>
+            <input id="new-out" type="text" placeholder="deixe vazio p/ auto" />
+          </label>
+        </div>
+        <button class="btn btn-primary" id="new-go" data-i18n="btn_download">Baixar</button>
+      </section>
+
+      <!-- VIEW: tarefas -->
+      <section class="view" id="view-tasks">
+        <div class="toolbar">
+          <button class="btn btn-primary" id="t-new" data-i18n="btn_new">Novo</button>
+          <span class="tb-sep"></span>
+          <button class="btn" id="t-start" disabled title="Pausa/retomada chega quando o engine suportar" data-i18n="btn_start">Iniciar</button>
+          <button class="btn" id="t-pause" disabled title="Pausa/retomada chega quando o engine suportar" data-i18n="btn_pause">Pausar</button>
+          <span class="tb-sep"></span>
+          <button class="btn" id="t-retry" data-i18n="btn_retry">Repetir com erro</button>
+          <button class="btn btn-danger" id="t-remove" data-i18n="btn_remove">Remover</button>
+          <button class="btn" id="t-clear" data-i18n="btn_clear">Limpar concluidos</button>
+          <span class="tb-spacer"></span>
+          <button class="btn" id="t-refresh" data-i18n="btn_refresh">Atualizar</button>
+        </div>
+        <div class="tasklist" id="tasklist"></div>
+        <p class="empty" id="tasks-empty" data-i18n="empty">Nenhuma tarefa aqui.</p>
+      </section>
+
+      <!-- VIEW: Terminal -->
+      <section class="view hidden" id="view-term">
+        <h1 data-i18n="h_term">Terminal do cofre</h1>
+        <p class="hint">Navegacao enjaulada na pasta de amostras. Comandos: <code>ls</code>, <code>cd &lt;dir&gt;</code>, <code>pwd</code>, <code>cat &lt;arquivo&gt;</code>, <code>clear</code>, <code>help</code>.</p>
+        <div class="term" id="term-out"></div>
+        <div class="term-input">
+          <span class="term-prompt" id="term-prompt">shiva:/$</span>
+          <input id="term-cmd" type="text" autocomplete="off" spellcheck="false" />
+        </div>
+      </section>
+
+      <!-- VIEW: Disassembly Packages -->
+      <section class="view hidden" id="view-disasm">
+        <h1>Disassembly Packages</h1>
+        <p class="hint">Submete um binario a varios backends de disassembly/decompilacao lado a lado.</p>
+        <form id="da-form" class="row">
+          <input id="da-sha" type="text" placeholder="sha256 da amostra (copie de uma tarefa concluida)" />
+          <button type="submit" class="btn btn-accent" data-i18n="btn_analyze">Analisar</button>
+        </form>
         <fieldset class="engines">
           <label><input type="checkbox" value="objdump-asm" checked /> objdump (asm)</label>
           <label><input type="checkbox" value="pseudo-c" checked /> pseudo-C</label>
           <label><input type="checkbox" value="llm-reversing" /> LLM reversing</label>
         </fieldset>
-        <button type="submit" class="btn btn-accent">Analisar</button>
-      </form>
-      <div class="da-results" id="da-results"></div>
-    </aside>
-  </main>
+        <div class="da-results" id="da-results"></div>
+      </section>
+
+      <!-- VIEW: Status -->
+      <section class="view hidden" id="view-status">
+        <h1 data-i18n="h_status">Status do engine</h1>
+        <div class="cards" id="status-cards"></div>
+      </section>
+
+      <!-- VIEW: Configuracoes -->
+      <section class="view hidden" id="view-settings">
+        <h1 data-i18n="h_settings">Configuracoes</h1>
+        <div class="field-row">
+          <label><span data-i18n="set_refresh">Intervalo de atualizacao (ms)</span>
+            <input id="set-refresh" type="number" min="500" max="10000" step="500" value="1500" />
+          </label>
+          <label><span data-i18n="set_conn">Conexoes padrao</span>
+            <input id="set-conn" type="number" min="1" max="16" value="4" />
+          </label>
+        </div>
+        <button class="btn btn-primary" id="set-save" data-i18n="btn_save">Salvar</button>
+        <div class="cards" id="settings-cards" style="margin-top:18px"></div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Drawer generico (detalhe da tarefa / sandbox) -->
+  <aside class="drawer hidden" id="drawer">
+    <div class="drawer-head">
+      <strong id="drawer-title">Detalhe</strong>
+      <button class="btn" id="drawer-close" data-i18n="btn_close">Fechar</button>
+    </div>
+    <div class="drawer-body" id="drawer-body"></div>
+  </aside>
 
   <script src="app.js"></script>
 </body>

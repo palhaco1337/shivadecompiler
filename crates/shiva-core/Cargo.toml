@@ -13,7 +13,8 @@ thiserror.workspace = true
 tracing.workspace = true
 
 # HTTP client with SOCKS5 support so we can route .onion fetches through Tor.
-reqwest = { version = "0.12.12", default-features = false, features = ["rustls-tls", "socks", "stream"] }
+# default-tls uses SChannel on Windows -> no OpenSSL and no C toolchain needed.
+reqwest = { version = "0.12.12", default-features = false, features = ["default-tls", "socks", "stream"] }
 futures-util = "0.3.31"
 sha2 = "0.10.8"
 hex = "0.4.3"

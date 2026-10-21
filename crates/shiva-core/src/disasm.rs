@@ -43,10 +43,15 @@ pub struct DisasmReport {
 }
 
 /// Pluggable backend contract.
-#[allow(async_fn_in_trait)]
+///
+/// `run` returns a boxed future (rather than `async fn`) so the trait stays
+/// `dyn`-compatible and backends can be stored as `Box<dyn DisasmBackend>`.
 pub trait DisasmBackend: Send + Sync {
     fn kind(&self) -> Backend;
-    async fn run(&self, artifact_sha256: &str) -> BackendResult;
+    fn run<'a>(
+        &'a self,
+        artifact_sha256: &'a str,
+    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = BackendResult> + Send + 'a>>;
 }
 
 /// Runs the requested backends and aggregates their results.

@@ -14,6 +14,7 @@
 pub mod disasm;
 pub mod download;
 pub mod sandbox;
+pub mod vault;
 
 use serde::{Deserialize, Serialize};
 
